@@ -22,6 +22,8 @@ class Selenium:
         self.wait = WebDriverWait(self.driver, 20)
 
     def login(self, user: str, password:str):
+        print("usr =", user)
+        print("psw =", password)
         self.driver.get(r'https://ponisha.ir/users/login')
 
         _ = self.wait.until(ec.presence_of_element_located((By.ID, 'input-username')))
@@ -118,11 +120,13 @@ def save_to_yaml(file_name: str, message: str, username: str, password: str):
         user_name = username,
         password = password,
     )
-    with open(file_name, "w", encoding='utf8') as f:
+    pathname = os.path.dirname(sys.argv[0])        
+    with open(pathname + "/" + file_name, "w", encoding='utf8') as f:
         yaml.dump(base_data, f, default_flow_style=False)
 
 def load_yaml_file(file_name: str) -> tuple:
-    with open(file_name, 'r', encoding='utf8') as f:
+    pathname = os.path.dirname(sys.argv[0])        
+    with open(pathname + "/" + file_name, 'r', encoding='utf8') as f:
         config_yaml = yaml.safe_load(f)
         request_message = config_yaml.get("message")
         username = config_yaml.get("user_name")

@@ -1,13 +1,12 @@
 import os
+import sys
 import time
 from selenium.webdriver import Firefox
-from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-from webdriver_manager.firefox import GeckoDriverManager
 import platform
 import yaml
 CURRENT_OS = platform.system()
@@ -15,24 +14,12 @@ if CURRENT_OS == "Windows":
     import winsound
 
 class Selenium:
-    def __init__(self, path: str, project_type: str):
-        if CURRENT_OS == "Linux":
-            geckodriver_name = 'geckodriver'
-        else:
-            geckodriver_name = 'geckodriver.exe'
+    def __init__(self, project_type: str):
         self.picked_url = ''
         self.project_type = project_type
         self.option = Options()
-        # self.option.binary_location = path
         self.option.page_load_strategy = 'none'
-        print("installing geckodriver")
-        geckodriver_install = GeckoDriverManager().install()
-        print("geckodriver installed")
-        folder = os.path.dirname(geckodriver_install)
-        geckodriver_path = os.path.join(folder, geckodriver_name)
-        print(geckodriver_path)
-        service = Service(webdriverpath=geckodriver_name)
-        self.driver = Firefox(options=self.option, service=service)
+        self.driver = Firefox(options=self.option)
         self.wait = WebDriverWait(self.driver, 20)
 
     def login(self, user: str, password:str):
@@ -56,6 +43,7 @@ class Selenium:
         self.driver.find_element(By.CLASS_NAME, 'css-egod06').click()
 
         _ = self.wait.until(ec.element_to_be_clickable((By.CLASS_NAME, 'css-11hbav8')))
+        # FIX: this only works for your account it needs to click on the fkin button man
         python_url = (r'https://ponisha.ir/dashboard/find-projects?skills[0]'
                       r'[id]=102&skills[0][title]=%D9%BE%D8%A7%DB%8C%D8%AA%D9%88%D9%86%20(Python)')
         all_url = r'https://ponisha.ir/dashboard/find-projects?filterSkillsByUserId=1071865'
@@ -93,7 +81,8 @@ class Selenium:
         price_range_list = price_range.split('تا')
         price_range_list = [price.replace(',', '').strip('از').strip() for price in price_range_list]
         return price_range_list
-
+    
+    # FIX: Add pressing the send button but test it fully first. how ? idk figure it out
     def auto_send_request(self, message: str, project) -> None:
         message = message.strip()
         time.sleep(5)
@@ -138,8 +127,15 @@ def load_yaml_file(file_name: str) -> tuple:
         pass_word = config_yaml.get("password")
     return config_yaml, request_message, username, pass_word
 
-# TODO: UI
+# TODO: UI or make the terminal version look better at least maybe some ascii art ? idk
+# TODO: save settings
+# TODO: Add AI generating request message
+# TODO: Add some sort of remote functionallity (sms, android app, etc)
+# TODO: Add check for new messages
 if __name__ == "__main__":
+    run_app = str(input('Do you want the app to run right now ?(y/n): \n'))
+    if run_app == "n":
+        sys.exit()
     game_mode = str(input('Would you like to turn on game mode?(error sound only)(y/n): \n'))
     what_type_of_url_needed = str(input('Do you want all of projects of only the python ones?(p for python): \n'))
     price_filter = str(input('Pick a price in millions (1 for 1,000,000 etc): \n'))
@@ -174,10 +170,11 @@ if __name__ == "__main__":
                 if not game_mode == 'y':
                     selenium.driver.maximize_window()
                 if CURRENT_OS == "Windows":
+                    # HACK: idk why this is happening maaaaaybe try and fix it but honestly who cares
                     winsound.Beep(500, 1000)
                 else:
                     _ = os.system('spd-say "new project detected"')
-
+                # TODO: move this to the start maybe if remote is on or smt idk figure it out
                 auto_request_send = input('Do you want me to automatically send requests to new projects? (y/n):\n')
                 if auto_request_send == 'y':
                     _ = selenium.auto_send_request(request_message, new_p)

@@ -20,11 +20,11 @@ This project automates the process of finding and sending requests to projects o
 ### On Windows
 1. Clone the project repository:
    ```bash
-   git clone https://github.com/yourusername/ponisha-automation.git
+   git clone https://github.com/MMDOV/ponisha-automated.git
    ```
 2. Change to the project directory:
    ```bash
-   cd ponisha-automation
+   cd ponisha-automated
    ```
 3. Create a virtual environment:
    ```bash
@@ -38,15 +38,19 @@ This project automates the process of finding and sending requests to projects o
    ```bash
    pip install -r requirements.txt
    ```
+6. Run the main script:
+   ```bash
+   python main.py
+   ```
 
 ### On Linux
 1. Clone the project repository:
    ```bash
-   git clone https://github.com/yourusername/ponisha-automation.git
+   git clone https://github.com/MMDOV/ponisha-automated.git
    ```
 2. Change to the project directory:
    ```bash
-   cd ponisha-automation
+   cd ponisha-automated
    ```
 3. Create a virtual environment:
    ```bash
@@ -56,12 +60,28 @@ This project automates the process of finding and sending requests to projects o
    ```bash
    ./run_main.sh
    ```
+5. Running the script manually:
+   
+   You can run the script manually too:
+      ```bash
+   source venv/bin/activate
+   ```
+   
+      ```bash
+   pip install -r requirements.txt
+   ```
+      
+   ```bash
+   python main.py
+   ```
 
 ## Usage
 To run the tool, first configure the `data.yml` file with your user information and the message you want to send. You can then run the application with:
 ```bash
 python main.py
 ```
+Also you can just run the script and let it do the rest!
+
 This will log you into Ponisha and find new projects to automatically send requests.
 
 ## Features

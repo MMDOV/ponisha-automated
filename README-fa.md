@@ -37,7 +37,7 @@
    ```bash
    pip install -r requirements.txt
    ```
-6.برای اجرای اسکریپت اصلی:
+6. برای اجرای اسکریپت اصلی:
    ```bash
    python main.py
    ```

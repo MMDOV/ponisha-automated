@@ -14,9 +14,8 @@ if CURRENT_OS == "Windows":
     import winsound
 
 class Selenium:
-    def __init__(self, project_type: str):
+    def __init__(self):
         self.picked_url = ''
-        self.project_type = project_type
         self.option = Options()
         self.option.page_load_strategy = 'none'
         self.driver = Firefox(options=self.option)
@@ -43,15 +42,18 @@ class Selenium:
         self.driver.find_element(By.CLASS_NAME, 'css-egod06').click()
 
         _ = self.wait.until(ec.element_to_be_clickable((By.CLASS_NAME, 'css-11hbav8')))
-        # FIX: this only works for your account it needs to click on the fkin button man
-        python_url = (r'https://ponisha.ir/dashboard/find-projects?skills[0]'
-                      r'[id]=102&skills[0][title]=%D9%BE%D8%A7%DB%8C%D8%AA%D9%88%D9%86%20(Python)')
-        all_url = r'https://ponisha.ir/dashboard/find-projects?filterSkillsByUserId=1071865'
-        if self.project_type == 'p':
-            self.picked_url = python_url
-        else:
-            self.picked_url = all_url
-        self.driver.get(self.picked_url)
+        search_button = self.driver.find_element(By.CLASS_NAME, 'css-11hbav8')
+        search_button.click()
+        # TODO: add skill picking
+
+        #python_url = (r'https://ponisha.ir/dashboard/find-projects?skills[0]'
+        #              r'[id]=102&skills[0][title]=%D9%BE%D8%A7%DB%8C%D8%AA%D9%88%D9%86%20(Python)')
+        #all_url = r'https://ponisha.ir/dashboard/find-projects?filterSkillsByUserId=1071865'
+        #if self.project_type == 'p':
+        #    self.picked_url = python_url
+        #else:
+        #    self.picked_url = all_url
+        #self.driver.get(self.picked_url)
 
     # grabs first project
     def grab_first_project(self) -> str:
@@ -137,12 +139,12 @@ if __name__ == "__main__":
     if run_app == "n":
         sys.exit()
     game_mode = str(input('Would you like to turn on game mode?(error sound only)(y/n): \n'))
-    what_type_of_url_needed = str(input('Do you want all of projects of only the python ones?(p for python): \n'))
+    #what_type_of_url_needed = str(input('Do you want all of projects of only the python ones?(p for python): \n'))
     price_filter = str(input('Pick a price in millions (1 for 1,000,000 etc): \n'))
     user_picked_price = int(price_filter + '000000')
     input_username = str(input('Please enter your Email(leave empty for default): \n'))
     input_pass_word = str(input('Please enter your Password(leave empty for default): \n'))
-    selenium = Selenium(project_type=what_type_of_url_needed)
+    selenium = Selenium()
     try:
         try:
             config_yaml, request_message, username, pass_word = load_yaml_file("data.yml")

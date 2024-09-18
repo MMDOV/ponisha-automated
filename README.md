@@ -17,7 +17,7 @@
 ## نصب
 
 ### در ویندوز
-1. ابتدا مخزن پروژه را کلون کنید:
+1. ابتدا پروژه را کلون کنید:
    ```bash
    git clone https://github.com/MMDOV/ponisha-automated.git
    ```
@@ -25,7 +25,7 @@
    ```bash
    cd ponisha-automated
    ```
-3. یک محیط مجازی ایجاد کنید:
+3. یک محیط مجازی ایجاد کنید(اختیاری ولی پیشنهاد میشود):
    ```bash
    python -m venv venv
    ```
@@ -39,7 +39,7 @@
    ```
 
 ### در لینوکس
-1. ابتدا مخزن پروژه را کلون کنید:
+1. ابتدا پروژه را کلون کنید:
    ```bash
    git clone https://github.com/MMDOV/ponisha-automated.git
    ```
@@ -51,9 +51,24 @@
    ```bash
    python3 -m venv venv
    ```
-4. وابستگی‌ها را نصب کنید:
+4. اجرای برنامه با استفاده از اسکریپت Bash:
    ```bash
    ./run_main.sh
+   ```
+
+   مطمئن شوید که دسترسی اجرای اسکریپت فعال است:
+   ```bash
+   chmod +x run_main.sh
+   ```
+
+5. اجرای برنامه به صورت دستی:
+   می‌توانید اسکریپت اصلی را به صورت دستی نیز اجرا کنید:
+      ```bash
+   pip install -r requirements.txt
+   ```
+      
+   ```bash
+   python main.py
    ```
 
 ## استفاده

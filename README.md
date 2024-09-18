@@ -68,6 +68,10 @@
 
 5. اجرای برنامه به صورت دستی:
    می‌توانید اسکریپت اصلی را به صورت دستی نیز اجرا کنید:
+         ```bash
+   source venv/bin/activate
+   ```
+   
       ```bash
    pip install -r requirements.txt
    ```

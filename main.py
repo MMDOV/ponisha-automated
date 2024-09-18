@@ -142,7 +142,7 @@ if __name__ == "__main__":
     user_picked_price = int(price_filter + '000000')
     input_username = str(input('Please enter your Email(leave empty for default): \n'))
     input_pass_word = str(input('Please enter your Password(leave empty for default): \n'))
-    selenium = Selenium(path=r"C:\Program Files\Mozilla Firefox\firefox.exe", project_type=what_type_of_url_needed)
+    selenium = Selenium(project_type=what_type_of_url_needed)
     try:
         try:
             config_yaml, request_message, username, pass_word = load_yaml_file("data.yml")

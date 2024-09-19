@@ -114,11 +114,14 @@ def compare_projects(previous_project_url: str, new_project_url: str) -> bool:
         return False
     return True
 
-def save_to_yaml(file_name: str, message: str, username: str, password: str):
+def save_to_yaml(file_name: str, message: str, username: str, password: str, game_mode: bool, price_filter:int, auto_request_send: bool ) -> None:
     base_data = dict (
         message = message,
         user_name = username,
         password = password,
+        game_mode = game_mode,
+        price_filter = price_filter,
+        auto_send_req = auto_request_send,
     )
     pathname = os.path.dirname(sys.argv[0])        
     with open(pathname + "/" + file_name, "w", encoding='utf8') as f:
@@ -131,49 +134,165 @@ def load_yaml_file(file_name: str) -> tuple:
         request_message = config_yaml.get("message")
         username = config_yaml.get("user_name")
         pass_word = config_yaml.get("password")
-    return config_yaml, request_message, username, pass_word
+        game_mode = config_yaml.get("game_mode")
+        price_filter = config_yaml.get("price_filter")
+        auto_send_req = config_yaml.get("auto_send_req")
+    return config_yaml, request_message, username, pass_word, game_mode, price_filter, auto_send_req
 
-# TODO: UI or make the terminal version look better at least maybe some ascii art ? idk
-# TODO: save settings
-# TODO: Add AI generating request message
-# TODO: Add some sort of remote functionallity (sms, android app, etc)
-# TODO: Add check for new messages
-if __name__ == "__main__":
-    run_app = str(input('Do you want the app to run right now ?(y/n): \n'))
-    if run_app == "n":
+def menu_generator(header:str, content_list:list[str], is_main_menu: bool) -> str:
+    os.system('cls' if os.name=='nt' else 'clear')
+    start_ascii = r"""
+     _____            _     _                           _                        _           _ 
+    |  __ \          (_)   | |               /\        | |                      | |         | |
+    | |__) |__  _ __  _ ___| |__   __ _     /  \  _   _| |_ ___  _ __ ___   __ _| |_ ___  __| |
+    |  ___/ _ \| '_ \| / __| '_ \ / _` |   / /\ \| | | | __/ _ \| '_ ` _ \ / _` | __/ _ \/ _` |
+    | |  | (_) | | | | \__ \ | | | (_| |  / ____ \ |_| | || (_) | | | | | | (_| | ||  __/ (_| |
+    |_|   \___/|_| |_|_|___/_| |_|\__,_| /_/    \_\__,_|\__\___/|_| |_| |_|\__,_|\__\___|\__,_|
+
+    """
+    print(start_ascii)
+    print()
+    print(header)
+    if len(content_list) > 0:
+        print("----------------------------------------")
+    idx = 1
+    for row in content_list:
+        print(f"{idx} - {row}")
+        idx = idx + 1
+    if is_main_menu:
+        print("0 - Exit")
+    else:
+        print("0 - Back")
+    user_answer = str(input("----------------------------------------\n"))
+    return user_answer
+
+def main_menu() -> tuple:
+    main_menu = ["Start", "Settings"]
+    run_app = menu_generator('Select one:', main_menu, True)
+    if run_app == "1":
+        try:
+            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send = load_yaml_file("data.yml")
+        except FileNotFoundError:
+            save_to_yaml("data.yml", "", "", "", False, 0, False)
+            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send = load_yaml_file("data.yml")
+        run_main_app(request_message, username, pass_word, game_mode, price_filter, auto_request_send)
+    elif run_app == "2":
+        request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
+    else:
         sys.exit()
-    game_mode = str(input('Would you like to turn on game mode?(error sound only)(y/n): \n'))
-    #what_type_of_url_needed = str(input('Do you want all of projects of only the python ones?(p for python): \n'))
-    price_filter = str(input('Pick a price in millions (1 for 1,000,000 etc): \n'))
-    user_picked_price = int(price_filter + '000000')
-    input_username = str(input('Please enter your Email(leave empty for default): \n'))
-    input_pass_word = str(input('Please enter your Password(leave empty for default): \n'))
+    return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+
+def settings_menu() -> tuple:
+        try:
+            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send = load_yaml_file("data.yml")
+        except FileNotFoundError:
+            save_to_yaml("data.yml", "", "", "", False, 0, False)
+            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send = load_yaml_file("data.yml")
+        if game_mode:
+            game_mode_setting = "ON"
+        else:
+            game_mode_setting = "OFF"
+        if price_filter:
+            price_filter_setting = str(price_filter) + '000000'
+        else:
+            price_filter_setting = price_filter
+        if auto_request_send:
+            auto_request_setting = "ON"
+        else:
+            auto_request_setting = "OFF"
+        if request_message:
+            message_setting = "SET"
+        else:
+            message_setting = "EMPTY"
+        settings_menu_list = [
+            f"Username       |      {username}",
+            f"Password       |      {pass_word}",
+            f"Game Mode      |      {game_mode_setting}",
+            f"Price Filter   |      {price_filter_setting}",
+            f"Auto Send Req  |      {auto_request_setting}",
+            f"Message        |      {message_setting}",
+        ]
+        user_picked_setting = menu_generator("Pick a setting to change:", settings_menu_list, False)
+        if user_picked_setting == "1":
+            input_username = menu_generator('Please enter your Email:', [], False)
+            if input_username == "0":
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+            username = input_username
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send)
+            main_menu()
+        elif user_picked_setting == "2":
+            input_pass_word = menu_generator('Please enter your Password:', [], False)
+            if input_pass_word == "0":
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+            pass_word = input_pass_word
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send)
+            main_menu()
+        elif user_picked_setting == "3":
+            input_game_mode = menu_generator('Would you like to turn on game mode?(error sound only):', ["ON", "OFF"], False)
+            input_game_mode = input_game_mode.lower()
+            if input_game_mode == "1":
+                game_mode = True
+            elif input_game_mode == "2":
+                game_mode = False
+            else:
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send)
+            main_menu()
+        elif user_picked_setting == "4":
+            input_price_filter = menu_generator('Pick a price in millions (1 for 1,000,000 etc):', [], False)
+            if input_price_filter == "0":
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+            try:
+                price_filter = int(input_price_filter)
+            except ValueError:
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send)
+            main_menu()
+        elif user_picked_setting == "5":
+            input_auto_request = menu_generator('Would you like the bot to automatically send requests to projects or just norify you ?', ["Auto send", "Just Notify"], False)
+            if input_auto_request == "1":
+                auto_request_send = True
+            elif input_auto_request == "2":
+                auto_request_send = False
+            else:
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send)
+            main_menu()
+        elif user_picked_setting == "6":
+            input_request_message = menu_generator('Enter your request message(note that it is recommended to edit the message directly in data.yml):', [], False)
+            if input_request_message == "0":
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+            request_message = input_request_message
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send)
+            main_menu()
+        else:
+            main_menu()
+        return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+
+def run_main_app(request_message, username, pass_word, game_mode, price_filter, auto_request_send):
+    os.system('cls' if os.name=='nt' else 'clear')
+    print("req", request_message)
     selenium = Selenium()
     try:
-        try:
-            config_yaml, request_message, username, pass_word = load_yaml_file("data.yml")
-        except FileNotFoundError:
-            save_to_yaml("data.yml", "", "", "")
-            config_yaml, request_message, username, pass_word = load_yaml_file("data.yml")
-        if input_username:
-            username = input_username
-            save_to_yaml("data.yml", request_message, username, pass_word)
-        if input_pass_word:
-            pass_word = input_pass_word
-            save_to_yaml("data.yml", request_message, username, pass_word)
         selenium.login(user=username, password=pass_word)
         previous_p = selenium.grab_first_project()
         price_range = selenium.get_price_range()
         price_low = int(price_range[0])
-        price_high = int(price_range[1])
-        price = int(price_low + (price_high - price_low) // 2)
+        price_filter = int(str(price_filter) + "000000")
         keep_going = True
         while keep_going:
             new_p = selenium.grab_first_project()
             projects_are_same = compare_projects(previous_p, new_p)
 
-            if not projects_are_same:
-                if not game_mode == 'y':
+            if not projects_are_same and price_filter <= price_low:
+                if not game_mode:
                     selenium.driver.maximize_window()
                 if CURRENT_OS == "Windows":
                     # HACK: idk why this is happening maaaaaybe try and fix it but honestly who cares
@@ -181,14 +300,13 @@ if __name__ == "__main__":
                 else:
                     _ = os.system('spd-say "new project detected"')
                 # TODO: move this to the start maybe if remote is on or smt idk figure it out
-                auto_request_send = input('Do you want me to automatically send requests to new projects? (y/n):\n')
-                if auto_request_send == 'y':
+                if auto_request_send:
                     _ = selenium.auto_send_request(request_message, new_p)
                 keep_going_str = input("Would you like to keep going? (y/n): ")
-                if keep_going_str == 'y' and auto_request_send == 'y':
+                if keep_going_str == 'y' and auto_request_send:
                     selenium.driver.get(selenium.picked_url)
                     keep_going = True
-                elif keep_going_str == 'y' and not auto_request_send == 'y':
+                elif keep_going_str == 'y' and not auto_request_send:
                     keep_going = True
                 else:
                     keep_going = False
@@ -198,9 +316,14 @@ if __name__ == "__main__":
             time.sleep(10)
     except Exception as e:
         print(e)
-        if not game_mode == 'y':
+        if not game_mode:
             selenium.driver.maximize_window()
         if CURRENT_OS == "Windows":
             winsound.Beep(500, 1000)
         else:
             _ = os.system('spd-say "Error"')
+# TODO: Add AI generating request message
+# TODO: Add some sort of remote functionallity (sms, android app, etc)
+# TODO: Add check for new messages
+if __name__ == "__main__":
+    main_menu()

@@ -278,7 +278,6 @@ def settings_menu() -> tuple:
 
 def run_main_app(request_message, username, pass_word, game_mode, price_filter, auto_request_send):
     os.system('cls' if os.name=='nt' else 'clear')
-    print("req", request_message)
     selenium = Selenium()
     try:
         selenium.login(user=username, password=pass_word)
@@ -286,6 +285,15 @@ def run_main_app(request_message, username, pass_word, game_mode, price_filter, 
         price_range = selenium.get_price_range()
         price_low = int(price_range[0])
         price_filter = int(str(price_filter) + "000000")
+        print("price filter = ", price_filter)
+        if game_mode:
+            print("Game mode = ON")
+        else:
+            print("Game mode = OFF")
+        if auto_request_send:
+            print("Auto send request = ON")
+        else:
+            print("Auto send request = OFF")
         keep_going = True
         while keep_going:
             new_p = selenium.grab_first_project()

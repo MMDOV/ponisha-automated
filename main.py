@@ -250,7 +250,7 @@ def settings_menu() -> tuple:
             save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send)
             main_menu()
         elif user_picked_setting == "4":
-            input_price_filter = menu_generator('Pick a price in millions (1 for 1,000,000 etc):', [], False)
+            input_price_filter = menu_generator('Pick a price in millions (1 for 1,000,000 etc) for 0 enter "00":', [], False)
             if input_price_filter == "0":
                 request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
                 return request_message, username, pass_word, game_mode, price_filter, auto_request_send

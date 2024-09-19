@@ -26,11 +26,19 @@ class Selenium:
         print("psw =", password)
         self.driver.get(r'https://ponisha.ir/users/login')
 
-        _ = self.wait.until(ec.presence_of_element_located((By.ID, 'input-username')))
-        time.sleep(20)
-        self.driver.find_element(By.ID, 'input-username').send_keys(user)
-        login_button = self.driver.find_element(By.TAG_NAME, 'button')
-        login_button.click()
+        def get_ready_state() -> bool:
+            ready_state = self.driver.execute_script("return document.readyState")
+            return ready_state == "complete"
+    
+        # Wait until the page's readyState is 'complete'
+        self.wait.until(ec.presence_of_element_located((By.ID, 'input-username')))
+        self.wait.until(lambda _: get_ready_state())
+        input_username = self.driver.find_element(By.ID, 'input-username')
+        input_username.send_keys(user)
+        _ = self.wait.until(ec.element_to_be_clickable((By.TAG_NAME, 'button')))
+        if input_username.get_attribute("value"):
+            login_button = self.driver.find_element(By.TAG_NAME, 'button')
+            login_button.click()
 
         # # logging in via phone number requires this step
         # self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-198qifb')))

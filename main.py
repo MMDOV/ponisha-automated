@@ -21,18 +21,18 @@ class Selenium:
         self.driver = Firefox(options=self.option)
         self.wait = WebDriverWait(self.driver, 20)
 
+    def get_ready_state(self) -> bool:
+        ready_state = self.driver.execute_script("return document.readyState")
+        return ready_state == "complete"
+
     def login(self, user: str, password:str):
         print("usr =", user)
         print("psw =", password)
         self.driver.get(r'https://ponisha.ir/users/login')
 
-        def get_ready_state() -> bool:
-            ready_state = self.driver.execute_script("return document.readyState")
-            return ready_state == "complete"
-    
         # Wait until the page's readyState is 'complete'
         self.wait.until(ec.presence_of_element_located((By.ID, 'input-username')))
-        self.wait.until(lambda _: get_ready_state())
+        self.wait.until(lambda _: self.get_ready_state())
         input_username = self.driver.find_element(By.ID, 'input-username')
         input_username.send_keys(user)
         _ = self.wait.until(ec.element_to_be_clickable((By.TAG_NAME, 'button')))
@@ -68,7 +68,7 @@ class Selenium:
     # grabs first project
     def grab_first_project(self) -> str:
         _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-pxmsqw')))
-        time.sleep(5)
+        self.wait.until(lambda _: self.get_ready_state())
         main_wrapper = self.driver.find_element(By.CLASS_NAME, 'main')
         projects = main_wrapper.find_element(By.CLASS_NAME, 'css-79elbk')
         first_project = projects.find_element(By.CLASS_NAME, 'css-pxmsqw')
@@ -78,12 +78,12 @@ class Selenium:
         return first_project_url
 
     def get_price_range(self):
-        time.sleep(5)
+        self.wait.until(lambda _: self.get_ready_state())
         _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-pxmsqw')))
         main_wrapper = self.driver.find_element(By.CLASS_NAME, 'main')
         projects = main_wrapper.find_element(By.CLASS_NAME, 'css-79elbk')
         first_project = projects.find_element(By.CLASS_NAME, 'css-pxmsqw')
-        time.sleep(5)
+        self.wait.until(lambda _: self.get_ready_state())
         _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-1sp2kcx')))
         info_section = first_project.find_elements(By.CLASS_NAME, 'css-1sp2kcx')
         budget_section = info_section[2]
@@ -97,7 +97,7 @@ class Selenium:
     # FIX: Add pressing the send button but test it fully first. how ? idk figure it out
     def auto_send_request(self, message: str, project) -> None:
         message = message.strip()
-        time.sleep(5)
+        self.wait.until(lambda _: self.get_ready_state())
         price_range = self.get_price_range()
 
         price = int((int(price_range[0]) + int(price_range[1])) / 2)
@@ -105,7 +105,7 @@ class Selenium:
         self.driver.get(project)
         self.wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div[class="css-dbb1rg"]')))
         button_wrapper = self.driver.find_element(By.CSS_SELECTOR, 'div[class="css-dbb1rg"]')
-        time.sleep(5)
+        self.wait.until(lambda _: self.get_ready_state())
         button_wrapper.find_element(By.TAG_NAME, "button").click()
         self.wait.until(ec.element_to_be_clickable((By.ID, 'input-amount')))
         self.driver.find_element(By.ID, 'input-amount').send_keys(str(price))

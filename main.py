@@ -6,7 +6,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import platform
 import yaml
 CURRENT_OS = platform.system()
@@ -19,7 +19,7 @@ class Selenium:
         self.option = Options()
         self.option.page_load_strategy = 'none'
         self.driver = Firefox(options=self.option)
-        self.wait = WebDriverWait(self.driver, 20)
+        self.wait = WebDriverWait(self.driver, 60)
 
     def get_ready_state(self) -> bool:
         ready_state = self.driver.execute_script("return document.readyState")
@@ -52,6 +52,7 @@ class Selenium:
         self.driver.find_element(By.CLASS_NAME, 'css-egod06').click()
 
         _ = self.wait.until(ec.element_to_be_clickable((By.CLASS_NAME, 'css-11hbav8')))
+        self.wait.until(lambda _: self.get_ready_state())
         search_button = self.driver.find_element(By.CLASS_NAME, 'css-11hbav8')
         search_button.click()
         # TODO: add skill picking
@@ -67,8 +68,18 @@ class Selenium:
 
     # grabs first project
     def grab_first_project(self) -> str:
-        _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-pxmsqw')))
-        self.wait.until(lambda _: self.get_ready_state())
+        tries = 4
+        while tries > 0:
+            try:
+                _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-pxmsqw')))
+                self.wait.until(lambda _: self.get_ready_state())
+                break
+            except TimeoutException:
+                tries = tries - 1
+                self.driver.refresh()
+                continue
+        if tries <= 0:
+            raise TimeoutException
         main_wrapper = self.driver.find_element(By.CLASS_NAME, 'main')
         projects = main_wrapper.find_element(By.CLASS_NAME, 'css-79elbk')
         first_project = projects.find_element(By.CLASS_NAME, 'css-pxmsqw')
@@ -315,7 +326,6 @@ def run_main_app(request_message, username, pass_word, game_mode, price_filter, 
                     winsound.Beep(500, 1000)
                 else:
                     _ = os.system('spd-say "new project detected"')
-                # TODO: move this to the start maybe if remote is on or smt idk figure it out
                 if auto_request_send:
                     _ = selenium.auto_send_request(request_message, new_p)
                 keep_going_str = input("Would you like to keep going? (y/n): ")
@@ -331,13 +341,13 @@ def run_main_app(request_message, username, pass_word, game_mode, price_filter, 
             selenium.driver.refresh()
             time.sleep(10)
     except Exception as e:
-        print(e)
         if not game_mode:
             selenium.driver.maximize_window()
         if CURRENT_OS == "Windows":
             winsound.Beep(500, 1000)
         else:
             _ = os.system('spd-say "Error"')
+        raise e
 # TODO: Add AI generating request message
 # TODO: Add some sort of remote functionallity (sms, android app, etc)
 # TODO: Add check for new messages

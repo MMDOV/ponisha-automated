@@ -67,25 +67,24 @@ class Selenium:
         #self.driver.get(self.picked_url)
 
     # grabs first project
-    def grab_first_project(self) -> str:
+    def grab_first_project(self) -> str | None:
         tries = 4
+        first_project_url = ""
         while tries > 0:
             try:
                 _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-pxmsqw')))
                 self.wait.until(lambda _: self.get_ready_state())
+                main_wrapper = self.driver.find_element(By.CLASS_NAME, 'main')
+                projects = main_wrapper.find_element(By.CLASS_NAME, 'css-79elbk')
+                first_project = projects.find_element(By.CLASS_NAME, 'css-pxmsqw')
+                first_project_url = first_project.find_element(By.TAG_NAME, 'a').get_attribute('href')
                 break
-            except TimeoutException:
+            except (TimeoutException, NoSuchElementException):
                 tries = tries - 1
                 self.driver.refresh()
                 continue
         if tries <= 0:
             raise TimeoutException
-        main_wrapper = self.driver.find_element(By.CLASS_NAME, 'main')
-        projects = main_wrapper.find_element(By.CLASS_NAME, 'css-79elbk')
-        first_project = projects.find_element(By.CLASS_NAME, 'css-pxmsqw')
-        first_project_url = first_project.find_element(By.TAG_NAME, 'a').get_attribute('href')
-        if not first_project_url:
-            raise NoSuchElementException
         return first_project_url
 
     def get_price_range(self):

@@ -315,30 +315,31 @@ def run_main_app(request_message, username, pass_word, game_mode, price_filter, 
         keep_going = True
         while keep_going:
             new_p = selenium.grab_first_project()
-            projects_are_same = compare_projects(previous_p, new_p)
+            if new_p and previous_p:
+                projects_are_same = compare_projects(previous_p, new_p)
 
-            if not projects_are_same and price_filter <= price_low:
-                if not game_mode:
-                    selenium.driver.maximize_window()
-                if CURRENT_OS == "Windows":
-                    # HACK: idk why this is happening maaaaaybe try and fix it but honestly who cares
-                    winsound.Beep(500, 1000)
-                else:
-                    _ = os.system('spd-say "new project detected"')
-                if auto_request_send:
-                    _ = selenium.auto_send_request(request_message, new_p)
-                keep_going_str = input("Would you like to keep going? (y/n): ")
-                if keep_going_str == 'y' and auto_request_send:
-                    selenium.driver.get(selenium.picked_url)
-                    keep_going = True
-                elif keep_going_str == 'y' and not auto_request_send:
-                    keep_going = True
-                else:
-                    keep_going = False
-                    break
-            previous_p = new_p
-            selenium.driver.refresh()
-            time.sleep(10)
+                if not projects_are_same and price_filter <= price_low:
+                    if not game_mode:
+                        selenium.driver.maximize_window()
+                    if CURRENT_OS == "Windows":
+                        # HACK: idk why this is happening maaaaaybe try and fix it but honestly who cares
+                        winsound.Beep(500, 1000)
+                    else:
+                        _ = os.system('spd-say "new project detected"')
+                    if auto_request_send:
+                        _ = selenium.auto_send_request(request_message, new_p)
+                    keep_going_str = input("Would you like to keep going? (y/n): ")
+                    if keep_going_str == 'y' and auto_request_send:
+                        selenium.driver.get(selenium.picked_url)
+                        keep_going = True
+                    elif keep_going_str == 'y' and not auto_request_send:
+                        keep_going = True
+                    else:
+                        keep_going = False
+                        break
+                previous_p = new_p
+                selenium.driver.refresh()
+                time.sleep(10)
     except Exception as e:
         if not game_mode:
             selenium.driver.maximize_window()

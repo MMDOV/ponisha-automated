@@ -328,7 +328,7 @@ def run_main_app(request_message, username, pass_word, game_mode, price_filter, 
                         _ = os.system('spd-say "new project detected"')
                     if auto_request_send:
                         _ = selenium.auto_send_request(request_message, new_p)
-                    keep_going_str = input("Would you like to keep going? (y/n): ")
+                    keep_going_str = str(input("Would you like to keep going? (y/n): ")).lower()
                     if keep_going_str == 'y' and auto_request_send:
                         selenium.driver.get(selenium.picked_url)
                         keep_going = True

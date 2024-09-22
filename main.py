@@ -374,6 +374,7 @@ def run_main_app(request_message: str, username: str, pass_word: str, game_mode:
                     else:
                         keep_going = False
                         break
+            previous_messages_len = new_messages_len
             if new_p and previous_p:
                 projects_are_same = compare_projects(previous_p, new_p)
 

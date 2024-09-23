@@ -169,11 +169,9 @@ class Selenium:
 
 # check if two projects are the same or not
 def compare_projects(previous_project_url: str, new_project_url: str) -> bool:
-    print("previous_project_url: ", previous_project_url)
-    print("new_project_url: ", new_project_url)
-    if previous_project_url != new_project_url:
-        return False
-    return True
+    print("Previous Project Url: ", previous_project_url)
+    print("New Project Url: ", new_project_url)
+    return previous_project_url == new_project_url
 
 def save_to_yaml(
     file_name: str,
@@ -477,7 +475,6 @@ def run_main_app(request_message: str,
             previous_messages_len = new_messages_len
             if new_p and previous_p:
                 projects_are_same = compare_projects(previous_p, new_p)
-
                 if not projects_are_same and price_filter <= price_low:
                     keep_going = selenium.notify_user("new project detected", game_mode, project_state)
                     if auto_request_send == "auto_send_without_asking":

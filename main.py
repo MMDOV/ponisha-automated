@@ -167,11 +167,6 @@ class Selenium:
                 keep_going = False
         return keep_going
 
-# check if two projects are the same or not
-def compare_projects(previous_project_url: str, new_project_url: str) -> bool:
-    print("Previous Project Url: ", previous_project_url)
-    print("New Project Url: ", new_project_url)
-    return previous_project_url == new_project_url
 
 def save_to_yaml(
     file_name: str,
@@ -460,11 +455,13 @@ def run_main_app(request_message: str,
     try:
         selenium.login(user=username, password=pass_word)
         previous_p = selenium.grab_first_project()
-        previous_messages_len = int(selenium.get_messages())
+        previous_messages_len = 0
         price_filter = int(str(price_filter) + "000000")
         keep_going = True
         while keep_going:
+            print("Grabbing First Project...")
             new_p = selenium.grab_first_project()
+            print("Checking For New Messages...")
             new_messages_len = int(selenium.get_messages())
             price_range = selenium.get_price_range()
             price_low = int(price_range[0])
@@ -472,10 +469,14 @@ def run_main_app(request_message: str,
                 keep_going = selenium.notify_user("new message detected", game_mode, messages_state)
                 if not keep_going:
                     break
+            else:
+                print("No New Message Detected")
             previous_messages_len = new_messages_len
             if new_p and previous_p:
-                projects_are_same = compare_projects(previous_p, new_p)
-                if not projects_are_same and price_filter <= price_low:
+                print("Comparing Project Urls...")
+                if previous_p != new_p and price_filter <= price_low:
+                    print("New Project Detected")
+                    print(f"New Project Url = {new_p}")
                     keep_going = selenium.notify_user("new project detected", game_mode, project_state)
                     if auto_request_send == "auto_send_without_asking":
                         _ = selenium.auto_send_request(request_message, new_p)
@@ -485,9 +486,14 @@ def run_main_app(request_message: str,
                             _ = selenium.auto_send_request(request_message, new_p)
                     if not keep_going:
                         break
+                else:
+                    print("No New Projects")
                 previous_p = new_p
-                selenium.driver.refresh()
-                time.sleep(10)
+            print("Refreshing...")
+            selenium.driver.refresh()
+            print("Waiting for 10 seconds")
+            time.sleep(10)
+            os.system('cls' if os.name=='nt' else 'clear')
     except Exception as e:
         _ = selenium.notify_user("Error", game_mode, "ignore")
         raise e

@@ -160,7 +160,7 @@ class Selenium:
                 winsound.Beep(500, 1000)
             else:
                 _ = os.system(f'spd-say "{message}"')
-            keep_going_str = menu_generator("Would you like to keep going?", ["YES", "NO"], False)
+            keep_going_str = menu_generator(header="Would you like to keep going?", content_list=["YES", "NO"], is_main_menu=False, clear=False)
             if keep_going_str == '1':
                 keep_going = True
             else:
@@ -209,18 +209,19 @@ def load_yaml_file(file_name: str) -> tuple:
         
 
 
-def menu_generator(header:str, content_list:list[str], is_main_menu: bool, pre_messages: list = []) -> str:
-    os.system('cls' if os.name=='nt' else 'clear')
-    start_ascii = r"""
-     _____            _     _                           _                        _           _ 
-    |  __ \          (_)   | |               /\        | |                      | |         | |
-    | |__) |__  _ __  _ ___| |__   __ _     /  \  _   _| |_ ___  _ __ ___   __ _| |_ ___  __| |
-    |  ___/ _ \| '_ \| / __| '_ \ / _` |   / /\ \| | | | __/ _ \| '_ ` _ \ / _` | __/ _ \/ _` |
-    | |  | (_) | | | | \__ \ | | | (_| |  / ____ \ |_| | || (_) | | | | | | (_| | ||  __/ (_| |
-    |_|   \___/|_| |_|_|___/_| |_|\__,_| /_/    \_\__,_|\__\___/|_| |_| |_|\__,_|\__\___|\__,_|
+def menu_generator(header:str, content_list:list[str], is_main_menu: bool, pre_messages: list = [], clear: bool = True) -> str:
+    if clear:
+        os.system('cls' if os.name=='nt' else 'clear')
+        start_ascii = r"""
+         _____            _     _                           _                        _           _ 
+        |  __ \          (_)   | |               /\        | |                      | |         | |
+        | |__) |__  _ __  _ ___| |__   __ _     /  \  _   _| |_ ___  _ __ ___   __ _| |_ ___  __| |
+        |  ___/ _ \| '_ \| / __| '_ \ / _` |   / /\ \| | | | __/ _ \| '_ ` _ \ / _` | __/ _ \/ _` |
+        | |  | (_) | | | | \__ \ | | | (_| |  / ____ \ |_| | || (_) | | | | | | (_| | ||  __/ (_| |
+        |_|   \___/|_| |_|_|___/_| |_|\__,_| /_/    \_\__,_|\__\___/|_| |_| |_|\__,_|\__\___|\__,_|
 
-    """
-    print(start_ascii)
+        """
+        print(start_ascii)
     if pre_messages:
         for message in pre_messages:
             print(message)
@@ -307,7 +308,6 @@ def simple_settings_menu() -> tuple:
         main_menu()
     return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
 
-# TODO: add a mode where it auto sends requests without needing confirmation for when there is no one checking on the bot
 def advanced_settings_menu() -> tuple:
         try:
             _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
@@ -477,13 +477,13 @@ def run_main_app(request_message: str,
                 if previous_p != new_p and price_filter <= price_low:
                     print("New Project Detected")
                     print(f"New Project Url = {new_p}")
+                    if auto_request_send == "ask_for_permission_everytime":
+                        user_answer = menu_generator("Would you like the bot to send a request automatically to this project ?", ["YES", "NO"], False, clear=False)
+                        if user_answer == "1":
+                            _ = selenium.auto_send_request(request_message, new_p)
                     keep_going = selenium.notify_user("new project detected", game_mode, project_state)
                     if auto_request_send == "auto_send_without_asking":
                         _ = selenium.auto_send_request(request_message, new_p)
-                    elif auto_request_send == "ask_for_permission_everytime":
-                        user_answer = menu_generator("Would you like the bot to send a request automatically to this project ?", ["YES", "NO"], False)
-                        if user_answer == "1":
-                            _ = selenium.auto_send_request(request_message, new_p)
                     if not keep_going:
                         break
                 else:

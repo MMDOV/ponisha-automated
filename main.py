@@ -242,7 +242,10 @@ def menu_generator(header:str, content_list:list[str], is_main_menu: bool, pre_m
     if is_main_menu:
         print("0 - Exit")
     else:
-        if not content_list[-1] == "NO":
+        if content_list:
+            if not content_list[-1] == "NO":
+                print("0 - Back")
+        else:
             print("0 - Back")
     user_answer = str(input("----------------------------------------\n"))
     return user_answer

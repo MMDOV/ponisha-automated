@@ -124,7 +124,6 @@ class Selenium:
             raise TimeoutException
         return chat_number
     
-    # FIX: Add pressing the send button but test it fully first. how ? idk figure it out
     def auto_send_request(self, message: str, project) -> None:
         message = message.strip()
         self.wait.until(lambda _: self.get_ready_state())
@@ -143,6 +142,30 @@ class Selenium:
         self.driver.find_element(By.ID, 'input-payments.0.title').send_keys('انجام پروژه')
         self.driver.find_element(By.ID, 'input-payments.0.amount').send_keys(str(price))
         self.driver.find_element(By.ID, 'input-description').send_keys(message)
+        submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+        submit_button.click()
+
+    def notify_user(self, message:str, game_mode: bool, state: str) -> bool:
+        keep_going = True
+        if state == "just_notify":
+            if CURRENT_OS == "Windows":
+                # HACK: idk why this is happening maaaaaybe try and fix it but honestly who cares
+                winsound.Beep(500, 1000)
+            else:
+                _ = os.system(f'spd-say "{message}"')
+        elif state == "notify_and_stop":
+            if not game_mode:
+                self.driver.maximize_window()
+            if CURRENT_OS == "Windows":
+                winsound.Beep(500, 1000)
+            else:
+                _ = os.system(f'spd-say "{message}"')
+            keep_going_str = menu_generator("Would you like to keep going?", ["YES", "NO"], False)
+            if keep_going_str == '1':
+                keep_going = True
+            else:
+                keep_going = False
+        return keep_going
 
 # check if two projects are the same or not
 def compare_projects(previous_project_url: str, new_project_url: str) -> bool:
@@ -152,7 +175,16 @@ def compare_projects(previous_project_url: str, new_project_url: str) -> bool:
         return False
     return True
 
-def save_to_yaml(file_name: str, message: str, username: str, password: str, game_mode: bool, price_filter:int, auto_request_send: bool, message_state: str ) -> None:
+def save_to_yaml(
+    file_name: str,
+    message: str,
+    username: str,
+    password: str,
+    game_mode: bool,
+    price_filter:int,
+    auto_request_send: str,
+    message_state: str,
+    project_state: str ) -> None:
     base_data = dict (
         message = message,
         user_name = username,
@@ -161,6 +193,7 @@ def save_to_yaml(file_name: str, message: str, username: str, password: str, gam
         price_filter = price_filter,
         auto_send_req = auto_request_send,
         message_state = message_state,
+        project_state = project_state,
     )
     pathname = os.path.dirname(sys.argv[0])        
     with open(pathname + "/" + file_name, "w", encoding='utf8') as f:
@@ -177,9 +210,13 @@ def load_yaml_file(file_name: str) -> tuple:
         price_filter = config_yaml.get("price_filter")
         auto_send_req = config_yaml.get("auto_send_req")
         messages_state = config_yaml.get("message_state")
-    return config_yaml, request_message, username, pass_word, game_mode, price_filter, auto_send_req, messages_state
+        project_state = config_yaml.get("project_state")
+    return config_yaml, request_message, username, pass_word, game_mode, price_filter, auto_send_req, messages_state, project_state
 
-def menu_generator(header:str, content_list:list[str], is_main_menu: bool) -> str:
+        
+
+
+def menu_generator(header:str, content_list:list[str], is_main_menu: bool, pre_messages: list = []) -> str:
     os.system('cls' if os.name=='nt' else 'clear')
     start_ascii = r"""
      _____            _     _                           _                        _           _ 
@@ -191,7 +228,10 @@ def menu_generator(header:str, content_list:list[str], is_main_menu: bool) -> st
 
     """
     print(start_ascii)
-    print()
+    if pre_messages:
+        for message in pre_messages:
+            print(message)
+        print("----------------------------------------")
     print(header)
     if len(content_list) > 0:
         print("----------------------------------------")
@@ -202,35 +242,82 @@ def menu_generator(header:str, content_list:list[str], is_main_menu: bool) -> st
     if is_main_menu:
         print("0 - Exit")
     else:
-        print("0 - Back")
+        if not content_list[-1] == "NO":
+            print("0 - Back")
     user_answer = str(input("----------------------------------------\n"))
     return user_answer
 
-def main_menu() -> tuple:
+def main_menu(pre_messages: list = []) -> tuple:
     main_menu = ["Start", "Settings"]
-    run_app = menu_generator('Select one:', main_menu, True)
+    run_app = menu_generator('Select one:', main_menu, True, pre_messages)
     if run_app == "1":
         try:
-            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = load_yaml_file("data.yml")
+            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
         except FileNotFoundError:
-            save_to_yaml("data.yml", "", "", "", False, 0, False, "notify_only")
-            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = load_yaml_file("data.yml")
-        run_main_app(request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state)
+            save_to_yaml("data.yml", "", "", "", False, 0, "dont_send_requests_automatically" , "notify_only", "notify_and_stop")
+            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
+        run_main_app(request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
     elif run_app == "2":
-        request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = settings_menu()
+        request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = simple_settings_menu()
     else:
         sys.exit()
-    return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
+    return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
 
-# TODO: add confirmation
-# TODO: add modes for new project find too
+def simple_settings_menu() -> tuple:
+    try:
+        _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
+    except FileNotFoundError:
+        save_to_yaml("data.yml", "", "", "", False, 0, "dont_send_requests_automatically", "notify_only", "notify_and_stop")
+        _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
+    simple_settings_menu_list = ["Automatic Mode", "Manual Mode", "Advanced Settings"]
+    user_picked_setting = menu_generator("Pick a preset or change what you want in advanced settings:", simple_settings_menu_list, False, [])
+    if user_picked_setting == "1":
+        auto_mode_head = "Automatic mode is for when you are not actively looking at the bot and want it to just send requests to all the available projects\n\
+                          This mode still uses your filters just does not notify you or ask for you permission for anything"
+        user_pick = menu_generator(auto_mode_head, ["Use Auto Mode"], False, [])
+        if user_pick == "1":
+            game_mode = False
+            auto_request_send = "auto_send_without_asking"
+            messages_state = "ignore"
+            project_state = "ignore"
+            changes_list = ['Automatic Mode is ON',
+                            'Game Mode was chnaged to "OFF"',
+                            'Auto Send was changed to "Auto Send Without Asking"',
+                            'Project Notification was changed to "Ignore"',
+                            'Messages Notification was changed to "Ignore"']
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu(changes_list)
+        else:
+            request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = simple_settings_menu()
+    elif user_picked_setting == "2":
+        manual_mode_head = "Manual mode is for when you ARE actively looking at the bot and want it to ask you for permission and notify you for almost everything\n\
+                            You can still just have the bot in the background and the bot notifies you when there is a new project but you need to give permission everytime"
+        user_pick = menu_generator(manual_mode_head, ["Use Manual Mode"], False, [])
+        if user_pick == "1":
+            auto_request_send = "dont_send_requests_automatically"
+            messages_state = "notify_only"
+            project_state = "notify_and_stop"
+            changes_list = ['Manual Mode is ON',
+                            'Auto Send was changed to "Dont Send Requests Automatically"',
+                            'Project Notification was changed to "Notify And Stop"',
+                            'Messages Notification was changed to "Notify Only"']
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu(changes_list)
+        else:
+            request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = simple_settings_menu()
+    elif user_picked_setting == "3":
+        request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+    else:
+        main_menu()
+    return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
+
 # TODO: add a mode where it auto sends requests without needing confirmation for when there is no one checking on the bot
-def settings_menu() -> tuple:
+def advanced_settings_menu() -> tuple:
         try:
-            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = load_yaml_file("data.yml")
+            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
         except FileNotFoundError:
-            save_to_yaml("data.yml", "", "", "", False, 0, False, "notify_only")
-            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = load_yaml_file("data.yml")
+            save_to_yaml("data.yml", "", "", "", False, 0, "dont_send_requests_automatically", "notify_only", "notify_and_stop")
+            _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
         if game_mode:
             game_mode_setting = "ON"
         else:
@@ -239,15 +326,13 @@ def settings_menu() -> tuple:
             price_filter_setting = str(price_filter) + '000000'
         else:
             price_filter_setting = price_filter
-        if auto_request_send:
-            auto_request_setting = "ON"
-        else:
-            auto_request_setting = "OFF"
+        auto_request_setting = auto_request_send.replace("_", " ").title()
         if request_message:
             message_setting = "SET"
         else:
             message_setting = "EMPTY"
         messages_state_setting = messages_state.replace("_", " ").title()
+        project_state_setting = project_state.replace("_", " ").title()
         settings_menu_list = [
             f"Username       |      {username}",
             f"Password       |      {pass_word}",
@@ -255,70 +340,81 @@ def settings_menu() -> tuple:
             f"Price Filter   |      {price_filter_setting}",
             f"Auto Send Req  |      {auto_request_setting}",
             f"Message        |      {message_setting}",
-            f"Messages State |      {messages_state_setting}",
+            f"Messages Notif |      {messages_state_setting}",
+            f"Projects Notif |      {project_state_setting}",
         ]
-        user_picked_setting = menu_generator("Pick a setting to change:", settings_menu_list, False)
+        user_picked_setting = menu_generator("Pick a setting to change:", settings_menu_list, False, [])
         if user_picked_setting == "1":
             input_username = menu_generator('Please enter your Email:', [], False)
             if input_username == "0":
-                request_message, username, pass_word, game_mode, price_filter, auto_request_send = settings_menu()
-                return request_message, username, pass_word, game_mode, price_filter, auto_request_send
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
+            prev_username = username
             username = input_username
-            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state)
-            main_menu()
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu([f'Username was changed from "{prev_username}" to "{input_username}"'])
         elif user_picked_setting == "2":
             input_pass_word = menu_generator('Please enter your Password:', [], False)
             if input_pass_word == "0":
-                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = settings_menu()
-                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
+            prev_password = pass_word
             pass_word = input_pass_word
-            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state)
-            main_menu()
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu([f'Password was changed from "{prev_password}" to "{input_pass_word}"'])
         elif user_picked_setting == "3":
             input_game_mode = menu_generator('Would you like to turn on game mode?(error sound only):', ["ON", "OFF"], False)
-            input_game_mode = input_game_mode.lower()
+            game_mode_setting_prev = game_mode_setting
             if input_game_mode == "1":
                 game_mode = True
+                game_mode_setting = "ON"
             elif input_game_mode == "2":
                 game_mode = False
+                game_mode_setting = "OFF"
             else:
-                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = settings_menu()
-                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
-            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state)
-            main_menu()
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu([f'Game Mode was changed from "{game_mode_setting_prev}" to "{game_mode_setting}"'])
         elif user_picked_setting == "4":
             input_price_filter = menu_generator('Pick a price in millions (1 for 1,000,000 etc) for 0 enter "00":', [], False)
             if input_price_filter == "0":
-                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = settings_menu()
-                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
             try:
+                prev_price_filter = price_filter
                 price_filter = int(input_price_filter)
             except ValueError:
-                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = settings_menu()
-                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
-            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state)
-            main_menu()
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu([f'Price Filter was changed from "{prev_price_filter}" to "{price_filter}"'])
         elif user_picked_setting == "5":
-            input_auto_request = menu_generator('Would you like the bot to automatically send requests to projects or just norify you ?', ["Auto send", "Just Notify"], False)
+            input_auto_request = menu_generator('Would you like the bot to automatically send requests to projects or just norify you ?', ["Auto Send Without Asking", "Ask For Permission Everytime", "Dont Send Requests Automatically"], False)
+            auto_request_setting_prev = auto_request_setting
             if input_auto_request == "1":
-                auto_request_send = True
+                auto_request_send = "auto_send_without_asking"
             elif input_auto_request == "2":
-                auto_request_send = False
+                auto_request_send = "ask_for_permission_everytime"
+            elif input_auto_request == "3":
+                auto_request_send = "dont_send_requests_automatically"
             else:
-                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = settings_menu()
-                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
-            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state)
-            main_menu()
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
+            auto_request_setting = auto_request_send.replace("_", " ").title()
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu([f'Auto send was changed from "{auto_request_setting_prev}" to "{auto_request_setting}"'])
         elif user_picked_setting == "6":
             input_request_message = menu_generator('Enter your request message(note that it is recommended to edit the message directly in data.yml):', [], False)
             if input_request_message == "0":
-                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = settings_menu()
-                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
             request_message = input_request_message
-            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state)
-            main_menu()
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu(["request message has been changed"])
         elif user_picked_setting == "7":
             input_message_state = menu_generator('What do you want the bot to do when you get a new message?:', ["Just Notify", "Notify And Stop", "Ignore"], False)
+            messages_state_setting_prev = messages_state_setting
             if input_message_state == "1":
                 messages_state = "just_notify"
             elif input_message_state == "2":
@@ -326,15 +422,38 @@ def settings_menu() -> tuple:
             elif input_message_state == "3":
                 messages_state = "ignore"
             else:
-                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = settings_menu()
-                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
-            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state)
-            main_menu()
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
+            messages_state_setting = messages_state.replace("_", " ").title()
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu([f'Messages Notification was changed from "{messages_state_setting_prev}" to "{messages_state_setting}"'])
+        elif user_picked_setting == "8":
+            input_project_state = menu_generator('What do you want the bot to do when there is a new project?:', ["Just Notify", "Notify And Stop", "Ignore"], False)
+            project_state_setting_prev = project_state_setting
+            if input_project_state == "1":
+                project_state = "just_notify"
+            elif input_project_state == "2":
+                project_state = "notify_and_stop"
+            elif input_project_state == "3":
+                project_state = "ignore"
+            else:
+                request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = advanced_settings_menu()
+                return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
+            project_state_setting = project_state.replace("_", " ").title()
+            save_to_yaml("data.yml", request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
+            main_menu([f'Project Notification was changed from "{project_state_setting_prev}" to "{project_state_setting}"'])
         else:
-            main_menu()
-        return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
+            simple_settings_menu()
+        return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state
 
-def run_main_app(request_message: str, username: str, pass_word: str, game_mode: bool, price_filter: int, auto_request_send: bool, messages_state: str):
+def run_main_app(request_message: str,
+                 username: str,
+                 pass_word: str,
+                 game_mode: bool,
+                 price_filter: int,
+                 auto_request_send: bool,
+                 messages_state: str,
+                 project_state: str):
     os.system('cls' if os.name=='nt' else 'clear')
     selenium = Selenium()
     try:
@@ -342,15 +461,6 @@ def run_main_app(request_message: str, username: str, pass_word: str, game_mode:
         previous_p = selenium.grab_first_project()
         previous_messages_len = int(selenium.get_messages())
         price_filter = int(str(price_filter) + "000000")
-        print("price filter = ", price_filter)
-        if game_mode:
-            print("Game mode = ON")
-        else:
-            print("Game mode = OFF")
-        if auto_request_send:
-            print("Auto send request = ON")
-        else:
-            print("Auto send request = OFF")
         keep_going = True
         while keep_going:
             new_p = selenium.grab_first_project()
@@ -358,57 +468,28 @@ def run_main_app(request_message: str, username: str, pass_word: str, game_mode:
             price_range = selenium.get_price_range()
             price_low = int(price_range[0])
             if new_messages_len > previous_messages_len:
-                if messages_state == "just_notify":
-                    if CURRENT_OS == "Windows":
-                        # HACK: idk why this is happening maaaaaybe try and fix it but honestly who cares
-                        winsound.Beep(500, 1000)
-                    else:
-                        _ = os.system('spd-say "new message detected"')
-                elif messages_state == "notify_and_stop":
-                    if not game_mode:
-                        selenium.driver.maximize_window()
-                    if CURRENT_OS == "Windows":
-                        winsound.Beep(500, 1000)
-                    else:
-                        _ = os.system('spd-say "new message detected"')
-                    keep_going_str = str(input("Would you like to keep going? (y/n): ")).lower()
-                    if keep_going_str == 'y':
-                        keep_going = True
-                    else:
-                        keep_going = False
-                        break
+                keep_going = selenium.notify_user("new message detected", game_mode, messages_state)
+                if not keep_going:
+                    break
             previous_messages_len = new_messages_len
             if new_p and previous_p:
                 projects_are_same = compare_projects(previous_p, new_p)
 
                 if not projects_are_same and price_filter <= price_low:
-                    if not game_mode:
-                        selenium.driver.maximize_window()
-                    if CURRENT_OS == "Windows":
-                        winsound.Beep(500, 1000)
-                    else:
-                        _ = os.system('spd-say "new project detected"')
-                    if auto_request_send:
+                    keep_going = selenium.notify_user("new project detected", game_mode, project_state)
+                    if auto_request_send == "auto_send_without_asking":
                         _ = selenium.auto_send_request(request_message, new_p)
-                    keep_going_str = str(input("Would you like to keep going? (y/n): ")).lower()
-                    if keep_going_str == 'y' and auto_request_send:
-                        selenium.driver.get(selenium.picked_url)
-                        keep_going = True
-                    elif keep_going_str == 'y' and not auto_request_send:
-                        keep_going = True
-                    else:
-                        keep_going = False
+                    elif auto_request_send == "ask_for_permission_everytime":
+                        user_answer = menu_generator("Would you like the bot to send a request automatically to this project ?", ["YES", "NO"], False)
+                        if user_answer == "1":
+                            _ = selenium.auto_send_request(request_message, new_p)
+                    if not keep_going:
                         break
                 previous_p = new_p
                 selenium.driver.refresh()
                 time.sleep(10)
     except Exception as e:
-        if not game_mode:
-            selenium.driver.maximize_window()
-        if CURRENT_OS == "Windows":
-            winsound.Beep(500, 1000)
-        else:
-            _ = os.system('spd-say "Error"')
+        _ = selenium.notify_user("Error", game_mode, "ignore")
         raise e
 # TODO: Add AI generating request message
 # TODO: Add some sort of remote functionallity (sms, android app, etc)

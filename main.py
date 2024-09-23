@@ -222,6 +222,9 @@ def main_menu() -> tuple:
         sys.exit()
     return request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state
 
+# TODO: add confirmation
+# TODO: add modes for new project find too
+# TODO: add a mode where it auto sends requests without needing confirmation for when there is no one checking on the bot
 def settings_menu() -> tuple:
         try:
             _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state = load_yaml_file("data.yml")
@@ -338,8 +341,6 @@ def run_main_app(request_message: str, username: str, pass_word: str, game_mode:
         selenium.login(user=username, password=pass_word)
         previous_p = selenium.grab_first_project()
         previous_messages_len = int(selenium.get_messages())
-        price_range = selenium.get_price_range()
-        price_low = int(price_range[0])
         price_filter = int(str(price_filter) + "000000")
         print("price filter = ", price_filter)
         if game_mode:
@@ -354,6 +355,8 @@ def run_main_app(request_message: str, username: str, pass_word: str, game_mode:
         while keep_going:
             new_p = selenium.grab_first_project()
             new_messages_len = int(selenium.get_messages())
+            price_range = selenium.get_price_range()
+            price_low = int(price_range[0])
             if new_messages_len > previous_messages_len:
                 if messages_state == "just_notify":
                     if CURRENT_OS == "Windows":

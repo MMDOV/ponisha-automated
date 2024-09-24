@@ -149,14 +149,19 @@ class Selenium:
         submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
         submit_button.click()
 
-    def notify_user(self, message:str, game_mode: bool, state: str) -> bool:
+    def notify_user(self, message:str, game_mode: bool, state: str, auto_request_send: str = "dont_send_requests_automatically") -> tuple:
         keep_going = True
+        auto_send_request_bool = False
         if state == "just_notify":
             if CURRENT_OS == "Windows":
                 # HACK: idk why this is happening maaaaaybe try and fix it but honestly who cares
                 winsound.Beep(500, 1000)
             else:
                 _ = os.system(f'spd-say "{message}"')
+            if auto_request_send == "ask_for_permission_everytime":
+                auto_send_request_input = menu_generator("Would you like the bot to send a request automatically to this project ?", ["YES", "NO"], False, clear=False)
+                if auto_send_request_input == "1":
+                    auto_send_request_bool = True
         elif state == "notify_and_stop":
             if not game_mode:
                 self.driver.maximize_window()
@@ -164,12 +169,16 @@ class Selenium:
                 winsound.Beep(500, 1000)
             else:
                 _ = os.system(f'spd-say "{message}"')
+            if auto_request_send == "ask_for_permission_everytime":
+                auto_send_request_input = menu_generator("Would you like the bot to send a request automatically to this project ?", ["YES", "NO"], False, clear=False)
+                if auto_send_request_input == "1":
+                    auto_send_request_bool = True
             keep_going_str = menu_generator(header="Would you like to keep going?", content_list=["YES", "NO"], is_main_menu=False, clear=False)
             if keep_going_str == '1':
                 keep_going = True
             else:
                 keep_going = False
-        return keep_going
+        return keep_going, auto_send_request_bool
 
 
 def save_to_yaml(
@@ -451,7 +460,7 @@ def run_main_app(request_message: str,
                  pass_word: str,
                  game_mode: bool,
                  price_filter: int,
-                 auto_request_send: bool,
+                 auto_request_send: str,
                  messages_state: str,
                  project_state: str):
     os.system('cls' if os.name=='nt' else 'clear')
@@ -481,12 +490,11 @@ def run_main_app(request_message: str,
                 if previous_p != new_p and price_filter <= price_low:
                     print("New Project Detected")
                     print(f"New Project Url = {new_p}")
-                    if auto_request_send == "ask_for_permission_everytime":
-                        user_answer = menu_generator("Would you like the bot to send a request automatically to this project ?", ["YES", "NO"], False, clear=False)
-                        if user_answer == "1":
-                            _ = selenium.auto_send_request(request_message, new_p)
-                    keep_going = selenium.notify_user("new project detected", game_mode, project_state)
-                    if auto_request_send == "auto_send_without_asking":
+                    keep_going, send_request_automaticaly = selenium.notify_user(
+                        "new project detected",
+                        game_mode, project_state,
+                        auto_request_send=auto_request_send)
+                    if send_request_automaticaly or auto_request_send == "auto_send_without_asking":
                         _ = selenium.auto_send_request(request_message, new_p)
                     if not keep_going:
                         break

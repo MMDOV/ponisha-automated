@@ -475,7 +475,11 @@ def run_main_app(request_message: str,
             print("Grabbing First Project...")
             new_p = selenium.grab_first_project()
             print("Checking For New Messages...")
-            new_messages_len = int(selenium.get_messages())
+            new_messages_len = selenium.get_messages()
+            if new_messages_len:
+                new_messages_len = int(new_messages_len)
+            else:
+                new_messages_len = 0
             price_range = selenium.get_price_range()
             price_low = int(price_range[0])
             if new_messages_len > previous_messages_len:

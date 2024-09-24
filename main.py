@@ -264,7 +264,7 @@ def main_menu(pre_messages: list = []) -> tuple:
         try:
             _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
         except FileNotFoundError:
-            save_to_yaml("data.yml", "", "", "", False, 0, "dont_send_requests_automatically" , "notify_only", "notify_and_stop")
+            save_to_yaml("data.yml", "", "", "", False, 0, "dont_send_requests_automatically" , "just_notify", "notify_and_stop")
             _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
         run_main_app(request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state)
     elif run_app == "2":
@@ -277,7 +277,7 @@ def simple_settings_menu() -> tuple:
     try:
         _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
     except FileNotFoundError:
-        save_to_yaml("data.yml", "", "", "", False, 0, "dont_send_requests_automatically", "notify_only", "notify_and_stop")
+        save_to_yaml("data.yml", "", "", "", False, 0, "dont_send_requests_automatically", "just_notify", "notify_and_stop")
         _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
     simple_settings_menu_list = ["Automatic Mode", "Manual Mode", "Advanced Settings"]
     user_picked_setting = menu_generator("Pick a preset or change what you want in advanced settings:", simple_settings_menu_list, False, [])
@@ -305,7 +305,7 @@ def simple_settings_menu() -> tuple:
         user_pick = menu_generator(manual_mode_head, ["Use Manual Mode"], False, [])
         if user_pick == "1":
             auto_request_send = "dont_send_requests_automatically"
-            messages_state = "notify_only"
+            messages_state = "just_notify"
             project_state = "notify_and_stop"
             changes_list = ['Manual Mode is ON',
                             'Auto Send was changed to "Dont Send Requests Automatically"',
@@ -325,7 +325,7 @@ def advanced_settings_menu() -> tuple:
         try:
             _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
         except FileNotFoundError:
-            save_to_yaml("data.yml", "", "", "", False, 0, "dont_send_requests_automatically", "notify_only", "notify_and_stop")
+            save_to_yaml("data.yml", "", "", "", False, 0, "dont_send_requests_automatically", "just_notify", "notify_and_stop")
             _, request_message, username, pass_word, game_mode, price_filter, auto_request_send, messages_state, project_state = load_yaml_file("data.yml")
         if game_mode:
             game_mode_setting = "ON"

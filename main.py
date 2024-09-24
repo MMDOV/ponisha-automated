@@ -64,12 +64,13 @@ class Selenium:
         #    self.picked_url = python_url
         #else:
         #    self.picked_url = all_url
-        #self.driver.get(self.picked_url)
+        #self.driver.get(python_url)
 
     # grabs first project
     def grab_first_project(self) -> str | None:
-        tries = 4
+        tries = 10
         first_project_url = ""
+        errors = []
         while tries > 0:
             try:
                 _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-pxmsqw')))
@@ -79,12 +80,15 @@ class Selenium:
                 first_project = projects.find_element(By.CLASS_NAME, 'css-pxmsqw')
                 first_project_url = first_project.find_element(By.TAG_NAME, 'a').get_attribute('href')
                 break
-            except (TimeoutException, NoSuchElementException):
+            except (TimeoutException, NoSuchElementException) as error:
+                errors.append(error)
                 tries = tries - 1
                 print("there was a problem refreshing page...")
                 self.driver.refresh()
                 continue
         if tries <= 0:
+            self.notify_user("error", False, "ignore")
+            print(errors)
             raise TimeoutException
         return first_project_url
 

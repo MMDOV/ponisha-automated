@@ -71,6 +71,7 @@ class Selenium:
         tries = 10
         first_project_url = ""
         errors = []
+        delay = 10
         while tries > 0:
             try:
                 _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-pxmsqw')))
@@ -80,14 +81,22 @@ class Selenium:
                 first_project = projects.find_element(By.CLASS_NAME, 'css-pxmsqw')
                 first_project_url = first_project.find_element(By.TAG_NAME, 'a').get_attribute('href')
                 break
-            except (TimeoutException, NoSuchElementException) as error:
+            except TimeoutException as error:
                 errors.append(error)
                 tries = tries - 1
                 print("there was a problem refreshing page...")
                 self.driver.refresh()
                 continue
+            except NoSuchElementException as error:
+                errors.append(error)
+                tries = tries - 1
+                print(f"there was a problem refreshing page after {delay} seconeds...")
+                time.sleep(delay)
+                self.driver.refresh()
+                delay = delay + 1
+                continue
         if tries <= 0:
-            self.notify_user("error", False, "ignore")
+            self.notify_user("error", False, "just_notify")
             print(errors)
             raise TimeoutException
         return first_project_url
@@ -483,6 +492,7 @@ def run_main_app(request_message: str,
             price_range = selenium.get_price_range()
             price_low = int(price_range[0])
             if new_messages_len > previous_messages_len:
+                print("New Message Detected")
                 keep_going = selenium.notify_user("new message detected", game_mode, messages_state)
                 if not keep_going:
                     break
@@ -511,7 +521,7 @@ def run_main_app(request_message: str,
             time.sleep(10)
             os.system('cls' if os.name=='nt' else 'clear')
     except Exception as e:
-        _ = selenium.notify_user("Error", game_mode, "ignore")
+        _ = selenium.notify_user("Error", game_mode, "just_notify")
         raise e
 # TODO: Add AI generating request message
 # TODO: Add some sort of remote functionallity (sms, android app, etc)

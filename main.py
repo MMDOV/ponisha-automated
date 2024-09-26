@@ -502,8 +502,7 @@ def run_main_app(request_message: str,
             previous_messages_len = new_messages_len
             if new_p and previous_p:
                 print("Comparing Project Urls...")
-                #if previous_p != new_p and price_filter <= price_high:
-                if True:
+                if previous_p != new_p and price_filter <= price_high:
                     print("New Project Detected")
                     print(f"New Project Url = {new_p}")
                     keep_going, send_request_automaticaly = selenium.notify_user(

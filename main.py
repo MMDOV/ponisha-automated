@@ -115,7 +115,7 @@ class Selenium:
         price_range = budget_section.find_element(By.CLASS_NAME, 'css-l23rzi')
         price_range = price_range.text
         price_range_list = price_range.split('تا')
-        price_range_list = [price.replace(',', '').strip('از').strip() for price in price_range_list]
+        price_range_list = [price.replace(',', '').strip('از').strip('بیش از').strip('تومان').strip() for price in price_range_list]
         return price_range_list
 
     def get_messages(self) -> str:
@@ -139,15 +139,16 @@ class Selenium:
     
     def auto_send_request(self, message: str, project) -> None:
         message = message.strip()
-        self.wait.until(lambda _: self.get_ready_state())
         price_range = self.get_price_range()
-
-        price = int((int(price_range[0]) + int(price_range[1])) / 2)
+        if len(price_range) >= 2:
+            price = int((int(price_range[0]) + int(price_range[-1])) / 2)
+        else:
+            price = int(price_range[-1])
 
         self.driver.get(project)
         self.wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div[class="css-dbb1rg"]')))
-        button_wrapper = self.driver.find_element(By.CSS_SELECTOR, 'div[class="css-dbb1rg"]')
         self.wait.until(lambda _: self.get_ready_state())
+        button_wrapper = self.driver.find_element(By.CSS_SELECTOR, 'div[class="css-dbb1rg"]')
         button_wrapper.find_element(By.TAG_NAME, "button").click()
         self.wait.until(ec.element_to_be_clickable((By.ID, 'input-amount')))
         self.driver.find_element(By.ID, 'input-amount').send_keys(str(price))
@@ -490,7 +491,7 @@ def run_main_app(request_message: str,
             else:
                 new_messages_len = 0
             price_range = selenium.get_price_range()
-            price_low = int(price_range[0])
+            price_high = int(price_range[-1])
             if new_messages_len > previous_messages_len:
                 print("New Message Detected")
                 keep_going = selenium.notify_user("new message detected", game_mode, messages_state)
@@ -501,7 +502,8 @@ def run_main_app(request_message: str,
             previous_messages_len = new_messages_len
             if new_p and previous_p:
                 print("Comparing Project Urls...")
-                if previous_p != new_p and price_filter <= price_low:
+                #if previous_p != new_p and price_filter <= price_high:
+                if True:
                     print("New Project Detected")
                     print(f"New Project Url = {new_p}")
                     keep_going, send_request_automaticaly = selenium.notify_user(
@@ -512,6 +514,14 @@ def run_main_app(request_message: str,
                         _ = selenium.auto_send_request(request_message, new_p)
                     if not keep_going:
                         break
+                    else:
+                        _ = selenium.wait.until(ec.invisibility_of_element_located((By.ID, 'input-amount')))
+                        selenium.driver.get(r'https://ponisha.ir/dashboard/my-activities')
+                        _ = selenium.wait.until(ec.element_to_be_clickable((By.CLASS_NAME, 'css-11hbav8')))
+                        selenium.wait.until(lambda _: selenium.get_ready_state())
+                        search_button = selenium.driver.find_element(By.CLASS_NAME, 'css-11hbav8')
+                        search_button.click()
+
                 else:
                     print("No New Projects")
                 previous_p = new_p

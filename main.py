@@ -2,6 +2,7 @@ import os
 import sys
 import time
 from selenium.webdriver import Firefox
+from selenium.webdriver.common.proxy import ProxyType
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as ec
@@ -138,6 +139,7 @@ class Selenium:
         return chat_number
     
     def auto_send_request(self, message: str, project) -> None:
+        tries = 4
         message = message.strip()
         price_range = self.get_price_range()
         if len(price_range) >= 2:
@@ -146,18 +148,29 @@ class Selenium:
             price = int(price_range[-1])
 
         self.driver.get(project)
-        self.wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div[class="css-dbb1rg"]')))
-        self.wait.until(lambda _: self.get_ready_state())
-        button_wrapper = self.driver.find_element(By.CSS_SELECTOR, 'div[class="css-dbb1rg"]')
-        button_wrapper.find_element(By.TAG_NAME, "button").click()
-        self.wait.until(ec.element_to_be_clickable((By.ID, 'input-amount')))
-        self.driver.find_element(By.ID, 'input-amount').send_keys(str(price))
-        self.driver.find_element(By.ID, 'input-days').send_keys('7')
-        self.driver.find_element(By.ID, 'input-payments.0.title').send_keys('انجام پروژه')
-        self.driver.find_element(By.ID, 'input-payments.0.amount').send_keys(str(price))
-        self.driver.find_element(By.ID, 'input-description').send_keys(message)
-        submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
-        submit_button.click()
+        while tries > 0:
+            try:
+                self.wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div[class="css-dbb1rg"]')))
+                self.wait.until(lambda _: self.get_ready_state())
+                button_wrapper = self.driver.find_element(By.CSS_SELECTOR, 'div[class="css-dbb1rg"]')
+                button_wrapper.find_element(By.TAG_NAME, "button").click()
+                self.wait.until(ec.element_to_be_clickable((By.ID, 'input-amount')))
+                self.driver.find_element(By.ID, 'input-amount').send_keys(str(price))
+                self.driver.find_element(By.ID, 'input-days').send_keys('7')
+                self.driver.find_element(By.ID, 'input-payments.0.title').send_keys('انجام پروژه')
+                self.driver.find_element(By.ID, 'input-payments.0.amount').send_keys(str(price))
+                self.driver.find_element(By.ID, 'input-description').send_keys(message)
+                submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+                submit_button.click()
+                break
+            except (TimeoutException, NoSuchElementException):
+                tries = tries - 1
+                print("there was a problem refreshing page...")
+                self.driver.refresh()
+                continue
+
+        if tries <= 0:
+            raise TimeoutException
 
     def notify_user(self, message:str, game_mode: bool, state: str, auto_request_send: str = "dont_send_requests_automatically") -> tuple:
         keep_going = True
@@ -500,6 +513,7 @@ def run_main_app(request_message: str,
             else:
                 print("No New Message Detected")
             previous_messages_len = new_messages_len
+            send_request_automaticaly = False
             if new_p and previous_p:
                 print("Comparing Project Urls...")
                 if previous_p != new_p and price_filter <= price_high:
@@ -510,12 +524,18 @@ def run_main_app(request_message: str,
                         game_mode, project_state,
                         auto_request_send=auto_request_send)
                     if send_request_automaticaly or auto_request_send == "auto_send_without_asking":
+                        send_request_automaticaly = True
                         _ = selenium.auto_send_request(request_message, new_p)
                     if not keep_going:
                         break
                     else:
+                        print("waiting for input amount element to be gone")
                         _ = selenium.wait.until(ec.invisibility_of_element_located((By.ID, 'input-amount')))
-                        selenium.driver.get(r'https://ponisha.ir/dashboard/my-activities')
+                        python_url = (r'https://ponisha.ir/dashboard/find-projects?skills[0]'
+                                      r'[id]=102&skills[0][title]=%D9%BE%D8%A7%DB%8C%D8%AA%D9%88%D9%86%20(Python)')
+                        dashboard_url = r'https://ponisha.ir/dashboard/my-activities'
+                        print("getting the url")
+                        selenium.driver.get(dashboard_url)
                         _ = selenium.wait.until(ec.element_to_be_clickable((By.CLASS_NAME, 'css-11hbav8')))
                         selenium.wait.until(lambda _: selenium.get_ready_state())
                         search_button = selenium.driver.find_element(By.CLASS_NAME, 'css-11hbav8')
@@ -524,8 +544,11 @@ def run_main_app(request_message: str,
                 else:
                     print("No New Projects")
                 previous_p = new_p
-            print("Refreshing...")
-            selenium.driver.refresh()
+            if not send_request_automaticaly:
+                print("Refreshing...")
+                selenium.driver.refresh()
+            else:
+                print("Request sent automatically")
             print("Waiting for 10 seconds")
             time.sleep(10)
             os.system('cls' if os.name=='nt' else 'clear')

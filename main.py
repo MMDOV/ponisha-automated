@@ -196,6 +196,8 @@ class Selenium:
                 auto_send_request_input = menu_generator("Would you like the bot to send a request automatically to this project ?", ["YES", "NO"], False, clear=False)
                 if auto_send_request_input == "1":
                     auto_send_request_bool = True
+                else:
+                    auto_send_request_bool = False
             keep_going_str = menu_generator(header="Would you like to keep going?", content_list=["YES", "NO"], is_main_menu=False, clear=False)
             if keep_going_str == '1':
                 keep_going = True
@@ -526,20 +528,20 @@ def run_main_app(request_message: str,
                     if send_request_automaticaly or auto_request_send == "auto_send_without_asking":
                         send_request_automaticaly = True
                         _ = selenium.auto_send_request(request_message, new_p)
+                        if keep_going:
+                            print("waiting for input amount element to be gone")
+                            _ = selenium.wait.until(ec.invisibility_of_element_located((By.ID, 'input-amount')))
+                            python_url = (r'https://ponisha.ir/dashboard/find-projects?skills[0]'
+                                          r'[id]=102&skills[0][title]=%D9%BE%D8%A7%DB%8C%D8%AA%D9%88%D9%86%20(Python)')
+                            dashboard_url = r'https://ponisha.ir/dashboard/my-activities'
+                            print("getting the url")
+                            selenium.driver.get(dashboard_url)
+                            _ = selenium.wait.until(ec.element_to_be_clickable((By.CLASS_NAME, 'css-11hbav8')))
+                            selenium.wait.until(lambda _: selenium.get_ready_state())
+                            search_button = selenium.driver.find_element(By.CLASS_NAME, 'css-11hbav8')
+                            search_button.click()
                     if not keep_going:
                         break
-                    else:
-                        print("waiting for input amount element to be gone")
-                        _ = selenium.wait.until(ec.invisibility_of_element_located((By.ID, 'input-amount')))
-                        python_url = (r'https://ponisha.ir/dashboard/find-projects?skills[0]'
-                                      r'[id]=102&skills[0][title]=%D9%BE%D8%A7%DB%8C%D8%AA%D9%88%D9%86%20(Python)')
-                        dashboard_url = r'https://ponisha.ir/dashboard/my-activities'
-                        print("getting the url")
-                        selenium.driver.get(dashboard_url)
-                        _ = selenium.wait.until(ec.element_to_be_clickable((By.CLASS_NAME, 'css-11hbav8')))
-                        selenium.wait.until(lambda _: selenium.get_ready_state())
-                        search_button = selenium.driver.find_element(By.CLASS_NAME, 'css-11hbav8')
-                        search_button.click()
 
                 else:
                     print("No New Projects")

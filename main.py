@@ -2,18 +2,18 @@ import os
 import sys
 import time
 from selenium.webdriver import Firefox
-from selenium.webdriver.common.proxy import ProxyType
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
 import platform
 import yaml
 CURRENT_OS = platform.system()
 if CURRENT_OS == "Windows":
     import winsound
 
+# TODO: add chrome support
 class Selenium:
     def __init__(self):
         self.picked_url = ''
@@ -88,7 +88,7 @@ class Selenium:
                 print("there was a problem refreshing page...")
                 self.driver.refresh()
                 continue
-            except NoSuchElementException as error:
+            except (NoSuchElementException, StaleElementReferenceException) as error:
                 errors.append(error)
                 tries = tries - 1
                 print(f"there was a problem refreshing page after {delay} seconeds...")
@@ -129,7 +129,7 @@ class Selenium:
                 chat_wrapper = self.driver.find_element(By.CSS_SELECTOR, 'button[aria-label="Chats"]')
                 chat_number = chat_wrapper.find_element(By.TAG_NAME, 'span').find_element(By.TAG_NAME, 'span').text
                 break
-            except (TimeoutException, NoSuchElementException):
+            except (TimeoutException, NoSuchElementException, StaleElementReferenceException):
                 tries = tries - 1
                 print("there was a problem refreshing page...")
                 self.driver.refresh()
@@ -163,7 +163,7 @@ class Selenium:
                 submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
                 submit_button.click()
                 break
-            except (TimeoutException, NoSuchElementException):
+            except (TimeoutException, NoSuchElementException, StaleElementReferenceException):
                 tries = tries - 1
                 print("there was a problem refreshing page...")
                 self.driver.refresh()

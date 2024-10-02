@@ -103,25 +103,40 @@ class Selenium:
         return first_project_url
 
     def get_price_range(self) -> list:
-        self.wait.until(lambda _: self.get_ready_state())
-        _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-pxmsqw')))
-        main_wrapper = self.driver.find_element(By.CLASS_NAME, 'main')
-        projects = main_wrapper.find_element(By.CLASS_NAME, 'css-79elbk')
-        first_project = projects.find_element(By.CLASS_NAME, 'css-pxmsqw')
-        self.wait.until(lambda _: self.get_ready_state())
-        _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-1sp2kcx')))
-        info_section = first_project.find_elements(By.CLASS_NAME, 'css-1sp2kcx')
-        budget_section = info_section[2]
-        _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-l23rzi')))
-        price_range = budget_section.find_element(By.CLASS_NAME, 'css-l23rzi')
-        price_range = price_range.text
-        price_range_list = price_range.split('تا')
-        price_range_list = [price.replace(',', '').strip('از').strip('بیش از').strip('تومان').strip() for price in price_range_list]
+        tries = 10
+        price_range_list = []
+        last_error = None
+        while True:
+            try:
+                self.wait.until(lambda _: self.get_ready_state())
+                _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-pxmsqw')))
+                main_wrapper = self.driver.find_element(By.CLASS_NAME, 'main')
+                projects = main_wrapper.find_element(By.CLASS_NAME, 'css-79elbk')
+                first_project = projects.find_element(By.CLASS_NAME, 'css-pxmsqw')
+                self.wait.until(lambda _: self.get_ready_state())
+                _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-1sp2kcx')))
+                info_section = first_project.find_elements(By.CLASS_NAME, 'css-1sp2kcx')
+                budget_section = info_section[2]
+                _ = self.wait.until(ec.presence_of_element_located((By.CLASS_NAME, 'css-l23rzi')))
+                price_range = budget_section.find_element(By.CLASS_NAME, 'css-l23rzi')
+                price_range = price_range.text
+                price_range_list = price_range.split('تا')
+                price_range_list = [price.replace(',', '').strip('از').strip('بیش از').strip('تومان').strip() for price in price_range_list]
+                break
+            except (TimeoutException, NoSuchElementException, StaleElementReferenceException) as error:
+                tries = tries - 1
+                print("there was a problem refreshing page...")
+                last_error = error
+                self.driver.refresh()
+                continue
+        if tries <= 0:
+            raise last_error
         return price_range_list
 
     def get_messages(self) -> str:
         tries = 4
         chat_number = ""
+        last_error = None
         while tries > 0:
             try:
                 self.wait.until(lambda _: self.get_ready_state())
@@ -129,13 +144,14 @@ class Selenium:
                 chat_wrapper = self.driver.find_element(By.CSS_SELECTOR, 'button[aria-label="Chats"]')
                 chat_number = chat_wrapper.find_element(By.TAG_NAME, 'span').find_element(By.TAG_NAME, 'span').text
                 break
-            except (TimeoutException, NoSuchElementException, StaleElementReferenceException):
+            except (TimeoutException, NoSuchElementException, StaleElementReferenceException) as error:
                 tries = tries - 1
                 print("there was a problem refreshing page...")
+                last_error = error
                 self.driver.refresh()
                 continue
         if tries <= 0:
-            raise TimeoutException
+            raise last_error
         return chat_number
     
     def auto_send_request(self, message: str, project) -> None:

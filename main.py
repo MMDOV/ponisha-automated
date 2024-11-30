@@ -6,7 +6,12 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
+from selenium.common.exceptions import (
+    ElementNotInteractableException,
+    NoSuchElementException,
+    StaleElementReferenceException,
+    TimeoutException
+    )
 import platform
 import yaml
 CURRENT_OS = platform.system()
@@ -131,6 +136,7 @@ class Selenium:
                 continue
         if tries <= 0:
             raise last_error
+        price_range_list = [(''.join(char for char in input_string if char.isdigit())) for input_string in price_range_list]
         return price_range_list
 
     def get_messages(self) -> str:
@@ -179,7 +185,7 @@ class Selenium:
                 submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
                 submit_button.click()
                 break
-            except (TimeoutException, NoSuchElementException, StaleElementReferenceException):
+            except (TimeoutException, NoSuchElementException, StaleElementReferenceException, ElementNotInteractableException):
                 tries = tries - 1
                 print("there was a problem refreshing page...")
                 self.driver.refresh()
@@ -534,6 +540,7 @@ def run_main_app(request_message: str,
             send_request_automaticaly = False
             if new_p and previous_p:
                 print("Comparing Project Urls...")
+                # TODO: add a check to see how many new projects are there and act acordingly
                 if previous_p != new_p and price_filter <= price_high:
                     print("New Project Detected")
                     print(f"New Project Url = {new_p}")

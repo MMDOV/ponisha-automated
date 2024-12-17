@@ -18,6 +18,7 @@ CURRENT_OS = platform.system()
 if CURRENT_OS == "Windows":
     import winsound
 
+
 # TODO: add chrome support
 class Selenium:
     def __init__(self):
@@ -110,7 +111,7 @@ class Selenium:
     def get_price_range(self) -> list:
         tries = 10
         price_range_list = []
-        last_error = None
+        last_error = Exception
         while True:
             try:
                 self.wait.until(lambda _: self.get_ready_state())
@@ -142,7 +143,7 @@ class Selenium:
     def get_messages(self) -> str:
         tries = 4
         chat_number = ""
-        last_error = None
+        last_error = Exception
         while tries > 0:
             try:
                 self.wait.until(lambda _: self.get_ready_state())
@@ -199,7 +200,6 @@ class Selenium:
         auto_send_request_bool = False
         if state == "just_notify":
             if CURRENT_OS == "Windows":
-                # HACK: idk why this is happening maaaaaybe try and fix it but honestly who cares
                 winsound.Beep(500, 1000)
             else:
                 _ = os.system(f'spd-say "{message}"')

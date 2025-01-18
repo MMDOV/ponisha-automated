@@ -76,7 +76,7 @@ This project automates the process of finding and sending requests to projects o
    ```
 
 ## Usage
-To run the tool, first configure the `data.yml` file with your user information and the message you want to send. You can then run the application with:
+To run the tool, just run:
 ```bash
 python main.py
 ```

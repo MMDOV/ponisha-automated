@@ -1155,8 +1155,6 @@ def run_main_app(
         while keep_going:
             print("Grabbing First Project...")
             new_p = selenium.grab_first_project()
-            if new_p:
-                print("new_p:", new_p["title"])
             print("Checking For New Messages...")
             new_messages_len = selenium.get_messages()
             if new_messages_len:

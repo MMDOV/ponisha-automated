@@ -376,13 +376,13 @@ def save_to_yaml(
         message_state=message_state,
         project_state=project_state,
     )
-    pathname = os.path.dirname(sys.argv[0])
+    pathname = os.path.dirname(os.path.abspath(__file__))
     with open(pathname + "/" + file_name, "w", encoding="utf8") as f:
         yaml.dump(base_data, f, default_flow_style=False)
 
 
 def load_yaml_file(file_name: str) -> tuple:
-    pathname = os.path.dirname(sys.argv[0])
+    pathname = os.path.dirname(os.path.abspath(__file__))
     with open(pathname + "/" + file_name, "r", encoding="utf8") as f:
         config_yaml = yaml.safe_load(f)
         request_message = config_yaml.get("message")
